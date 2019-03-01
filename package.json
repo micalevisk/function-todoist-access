@@ -1,0 +1,22 @@
+{
+  "name": "function-todoist-access",
+  "description": "Função do Webtask.io para consumir a Sync API v7 do Todoist",
+  "version": "1.0.0",
+  "main": "todoistEntry.js",
+  "author": "Micael Levi <mllc@icomp.ufam.edu.br> (micalevisk.github.io)",
+  "license": "MIT",
+  "scripts": {
+    "start": "nodemon -x \"npm run wt:serve\" -e js",
+    "test": "cross-env NODE_ENV=test node --inspect .",
+    "wt:serve": "cross-env NODE_ENV=development wt serve . --secrets-file ./.env --hostname localhost --port 1234",
+    "wt:create": "cross-env NODE_ENV=production wt create -b . --secrets-file ./.env --name todoist-access",
+    "wt:logs": "wt logs"
+  },
+  "devDependencies": {
+    "cross-env": "^5.2.0",
+    "dotenv": "^6.0.0"
+  },
+  "dependencies": {
+    "axios": "^0.18.0"
+  }
+}
