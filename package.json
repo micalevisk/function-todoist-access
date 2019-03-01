@@ -10,6 +10,7 @@
     "test": "cross-env NODE_ENV=test node --inspect .",
     "wt:serve": "cross-env NODE_ENV=development wt serve . --secrets-file ./.env --hostname localhost --port 1234",
     "wt:create": "cross-env NODE_ENV=production wt create -b . --secrets-file ./.env --name todoist-access",
+    "wt:update": "cross-env NODE_ENV=production wt update todoist-access .",
     "wt:logs": "wt logs"
   },
   "devDependencies": {
