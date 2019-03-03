@@ -8,5 +8,5 @@ $ npm start
 
 ## deploy (to https://webtask.io)
 ```bash
-$ npm run wt:create
+$ npm run deploy
 ```
