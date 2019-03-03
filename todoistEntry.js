@@ -1,5 +1,4 @@
-const axios = require('axios');
-const formatProjectItems = require('./formatProjectItems');
+const TodoistAPI = require('./todoistAPI');
 
 /**
  *
@@ -23,21 +22,8 @@ function todoistAccess(ctx, cb) {
       new Error(`Invalid project name ('${projectName}'); project id not found.`)
     );
 
-  // API REFERENCE: https://developer.todoist.com/sync/v7
-  const todoistInstance = axios.create({
-    baseURL: 'https://todoist.com/api/v7',
-    headers: {
-      'Authorization': `Bearer ${TODOIST_API_TOKEN}`
-    }
-  });
-
-  function onFetchProjectData(res) {
-    const projectItems = formatProjectItems(res.data);
-    return cb(null, projectItems);
-  }
-
-  todoistInstance.post('projects/get_data', { project_id: projectId })
-    .then(onFetchProjectData)
+  return TodoistAPI(TODOIST_API_TOKEN).getProjectItems(projectId)
+    .then(projectItems => cb(null, projectItems))
     .catch(err => cb(err));
 }
 
