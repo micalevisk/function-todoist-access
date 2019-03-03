@@ -28,9 +28,9 @@ function formatContent(content) {
 
 function formatProjectItems(projectData, minIndent = 2) {
   const filteredItems = projectData.items
-    .filter((item) => !item.content.startsWith('~ ') &&
-                      !item.content.endsWith('✖️') &&
-                       item.indent >= minIndent);
+    .filter(item => !item.content.startsWith('~ ') &&
+                    !item.content.endsWith('✖️') &&
+                     item.indent >= minIndent);
 
   return filteredItems.map(item => ({
     indent: item.indent,
