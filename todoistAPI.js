@@ -40,17 +40,20 @@ function formatProjectItems({ items }, minIndent = 2) {
   });
 
   let selectedItems = [];
-  let excludedItemsId = [];
+  let indentOfLastExcluded = null;
 
   for (const item of items) {
     if (item.content.endsWith('✖️')) { // item onde os 'filhos' também devem ser excluídos
-      excludedItemsId.push(item['id']);
+      indentOfLastExcluded = item['indent'];
     } else {
-      if (item.indent < minIndent ||
-          item.content.startsWith('~ ')) continue; // item que não deve ser listado
-
-      if (item['parent_id'] &&
-          !excludedItemsId.includes(item['parent_id'])) selectedItems.push( formatItem(item) );
+      if (item['indent'] <= indentOfLastExcluded) {
+        indentOfLastExcluded = null;
+      }
+      if (item['indent'] < minIndent || item.content.startsWith('~ ')) {
+        continue;
+      } else if (indentOfLastExcluded === null) {
+        selectedItems.push( formatItem(item) );
+      }
     }
   }
 
