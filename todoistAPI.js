@@ -3,6 +3,7 @@ const axios = require('axios');
 
 const REGEX_ITEM_CONTENT = /^(?:\{([^}]+)\}\s*)?([^(\s]+)(?:\s*\((.+)\))?/;
 const REGEX_PLAYLIST_CONTENT = /\bplaylist\b/;
+const REGEX_IGNORE_ITEM = /✖️:?$/;
 
 
 function formatDate(dateAdded) {
@@ -43,7 +44,7 @@ function formatProjectItems({ items }, minIndent = 2) {
   let indentOfLastExcluded = null;
 
   for (const item of items) {
-    if (item.content.endsWith('✖️')) { // item onde os 'filhos' também devem ser excluídos
+    if (REGEX_IGNORE_ITEM.test(item.content)) { // item onde os 'filhos' também devem ser excluídos
       indentOfLastExcluded = item['indent'];
     } else {
       if (item['indent'] <= indentOfLastExcluded) {
