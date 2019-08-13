@@ -40,19 +40,23 @@ function formatProjectItems({ items }, minIndent = 2) {
     content: formatContent(item.content),
   });
 
-  let selectedItems = [];
-  let indentOfLastExcluded = null;
+  const selectedItems = [];
+  let lastSkippedParentIndent = 0; // Assuming that minimum indent level is 1
 
-  for (const item of items) {
-    if (REGEX_IGNORE_ITEM.test(item.content)) { // item onde os 'filhos' também devem ser excluídos
-      indentOfLastExcluded = item['indent'];
+  for (const item of items) { // Filter and format items
+    const currIndent = item.indent;
+
+    if (REGEX_IGNORE_ITEM.test(item.content)) { // Skip this item and nested ones
+      lastSkippedParentIndent = currIndent;
     } else {
-      if (item['indent'] <= indentOfLastExcluded) {
-        indentOfLastExcluded = null;
+      const hasValidIndentLevel = !(currIndent < minIndent);
+      const dontSkip = !lastSkippedParentIndent;
+
+      if (currIndent <= lastSkippedParentIndent) {
+        lastSkippedParentIndent = 0;
       }
-      if (item['indent'] < minIndent || item.content.startsWith('~ ')) {
-        continue;
-      } else if (indentOfLastExcluded === null) {
+
+      if (hasValidIndentLevel && dontSkip) {
         selectedItems.push( formatItem(item) );
       }
     }
