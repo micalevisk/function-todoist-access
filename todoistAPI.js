@@ -1,28 +1,33 @@
-// Todoist's API Reference: https://developer.todoist.com/sync/v7
+// Todoist's API Reference: https://developer.todoist.com/sync/v8
 const axios = require('axios');
 
 const REGEX_ITEM_CONTENT = /^(?:\{([^}]+)\}\s*)?([^(\s]+)(?:\s*\((.+)\))?/;
 const REGEX_PLAYLIST_CONTENT = /\bplaylist\b/;
 const REGEX_IGNORE_ITEM = /✖️:?$/;
+const REGEX_CATEGORY_ITEM = /:$/;
+const NIL = -1;
 
 
 function formatDate(dateAdded) {
-  //return dateAdded.replace(/\w+\s(\d+)\s(\w+)\s(\d+).*/, '$2 $1, $3');
-  const [, day, month, year] = dateAdded.split(' ', 4);
+  const [, day, month, year] = dateAdded.match(/^(\d{4})-(\d{2})-(\d{2})/);
   return `${month} ${day}, ${year}`;
 }
 
 function formatContent(content) {
   const matches = content.match(REGEX_ITEM_CONTENT);
-  if (!matches) return content;
+  if (!matches) return { text: content };
+
+  const [, rawTag, link, text] = matches;
+
+  if (!link || !text) return { text: content };
 
   const contentMetadata = {
-    link: matches[2],
-    text: matches[3],
+    link,
+    text,
   };
 
-  const tag = matches[1]
-            ? matches[1].toLowerCase()
+  const tag = rawTag
+            ? rawTag.toLowerCase()
             : ( REGEX_PLAYLIST_CONTENT.test(content) && 'playlist' );
 
   return tag
@@ -32,8 +37,7 @@ function formatContent(content) {
 
 function formatProjectItems({ items }, minIndent = 2) {
   const formatItem = item => ({
-    indent: item.indent,
-    checked: item.checked,
+    checked: !!item.checked,
     dateAdded: formatDate(item.date_added),
     id: item.id,
     priority: item.priority,
@@ -41,24 +45,34 @@ function formatProjectItems({ items }, minIndent = 2) {
   });
 
   const selectedItems = [];
-  let lastSkippedParentIndent = 0; // Assuming that minimum indent level is 1
+  let lastSkippedParentId = NIL;
 
   for (const item of items) { // Filter and format items
-    const currIndent = item.indent;
+    const {
+      id: currId,
+      parent_id: currParentId,
+      content: currContent,
+    } = item;
 
-    if (REGEX_IGNORE_ITEM.test(item.content)) { // Skip this item and nested ones
-      lastSkippedParentIndent = currIndent;
-    } else {
-      const hasValidIndentLevel = !(currIndent < minIndent);
-      const dontSkip = !lastSkippedParentIndent;
+    if (REGEX_IGNORE_ITEM.test(currContent)) { // Skip this item and nested ones
+      lastSkippedParentId = currId;
+      continue;
+    }
 
-      if (currIndent <= lastSkippedParentIndent) {
-        lastSkippedParentIndent = 0;
-      }
+    const isCategory = REGEX_CATEGORY_ITEM.test(currContent);
+    const parentSkipped = currParentId == lastSkippedParentId;
+    const skipItem = (parentSkipped || isCategory);
 
-      if (hasValidIndentLevel && dontSkip) {
-        selectedItems.push( formatItem(item) );
-      }
+    if (!skipItem) {
+      selectedItems.push( formatItem(item) );
+    }
+
+    if (currParentId !== lastSkippedParentId) {
+      lastSkippedParentId = NIL;
+    }
+
+    if (isCategory && parentSkipped) {
+      lastSkippedParentId = currId;
     }
   }
 
@@ -67,7 +81,7 @@ function formatProjectItems({ items }, minIndent = 2) {
 
 function makeInstance(apiToken) {
   const conn = axios.create({
-    baseURL: 'https://todoist.com/api/v7',
+    baseURL: 'https://api.todoist.com/sync/v8',
     headers: {
       'Authorization': `Bearer ${apiToken}`
     }
@@ -75,6 +89,7 @@ function makeInstance(apiToken) {
 
   const getProjectItems = projectId =>
     conn.post('projects/get_data', { project_id: projectId })
+        //.then(({ data }) => data) // DEBUG mode
         .then(({ data }) => formatProjectItems(data))
 
   return {
